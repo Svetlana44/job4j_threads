@@ -5,8 +5,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /*  Программа должна скачивать файл из сети с ограничением по скорости скачки.
  Чтобы ограничить скорость скачивания, нужно засечь время скачивания 1024 байт.
@@ -21,22 +19,24 @@ import java.util.regex.Pattern;
 public class Wget implements Runnable {
     private final String url;
     private final int speed;
+    private final String fileOut;
 
-    public Wget(String url, int speed) {
+    public Wget(String url, int speed, String fileOut) {
         this.url = url;
         this.speed = speed;
+        this.fileOut = fileOut;
     }
 
     @Override
     public void run() {
-        fileDownLoad(this.url, this.speed);
+        fileDownLoad(this.url, this.speed, this.fileOut);
         System.out.println("Что-то скачалось");
         /* Скачать файл*/
     }
 
     /*  "https://raw.githubusercontent.com/peterarsentev/course_test/master/pom.xml"   1000  */
     public static boolean validationArgs(String[] args) {
-        if (args.length != 2) {
+        if (args.length != 3) {
             throw new IllegalArgumentException("Неверное количество аргументов.");
         }
         if (!args[0].contains("https://")) {
@@ -45,27 +45,36 @@ public class Wget implements Runnable {
         if (!args[1].matches("\\d+")) {
             throw new IllegalArgumentException("Второй аргумент должен быть числом.");
         }
-        Pattern pattern = Pattern.compile("https://.*?/pom.xml");
+/*        Pattern pattern = Pattern.compile("https://.*?/pom.xml");
         Matcher matcher = pattern.matcher(args[0]);
         if (!matcher.find()) {
             throw new IllegalArgumentException("Первый аргумент не содержит ссылку.");
-        }
+        }  */
         return true;
     }
 
-    public static void fileDownLoad(String url, int speed) {
+    public static void fileDownLoad(String url, int speed, String fileOut) {
         var startAt = System.currentTimeMillis();
-        var file = new File("tmp.xml");
+        /*  var file = new File("tmp.xml");   */
+        var file = new File(fileOut);
         try (var input = new URL(url).openStream();
              var output = new FileOutputStream(file)) {
             System.out.println("Open connection: " + (System.currentTimeMillis() - startAt) + " ms");
             var dataBuffer = new byte[512];
             int bytesRead;
+ /*  старт отсекаем время с помощью currentTimMillis и до цикла. Также до цикла добавляем переменную,
+  в которую будем накапливать количество скачанных байт - как только она достигла speed - ставим на паузу если это необходимо    */
+            int sumReadedBytes = 0;
+
             while ((bytesRead = input.read(dataBuffer, 0, dataBuffer.length)) != -1) {
-                Thread.currentThread().sleep(5);
                 var downloadAt = System.nanoTime();
                 output.write(dataBuffer, 0, bytesRead);
+                sumReadedBytes += bytesRead;
                 System.out.println("Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");
+                if (sumReadedBytes >= speed && startAt < 5000) {
+                    Thread.currentThread().sleep(5 - startAt);
+                    startAt = System.currentTimeMillis();
+                }
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -81,7 +90,8 @@ public class Wget implements Runnable {
         if (validationArgs(args)) {
             String url = args[0];
             int speed = Integer.parseInt(args[1]);
-            Thread wget = new Thread(new Wget(url, speed));
+            String fileOut = "tmp2.xml";
+            Thread wget = new Thread(new Wget(url, speed, fileOut));
             wget.start();
             wget.join();
         }
