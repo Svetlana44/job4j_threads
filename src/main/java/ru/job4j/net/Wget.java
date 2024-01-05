@@ -71,9 +71,11 @@ public class Wget implements Runnable {
                 output.write(dataBuffer, 0, bytesRead);
                 sumReadedBytes += bytesRead;
                 System.out.println("Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");
-                if (sumReadedBytes >= speed && startAt < 5000) {
-                    Thread.currentThread().sleep(5 - startAt);
-                    startAt = System.currentTimeMillis();
+                if (sumReadedBytes >= speed) {
+                    long speedBytes = System.nanoTime() - downloadAt;
+                    if (speedBytes < 1000000) {
+                        Thread.currentThread().sleep((1000000 - speedBytes) / 1000000);
+                    }
                 }
             }
         } catch (IOException | InterruptedException e) {
@@ -90,7 +92,7 @@ public class Wget implements Runnable {
         if (validationArgs(args)) {
             String url = args[0];
             int speed = Integer.parseInt(args[1]);
-            String fileOut = "tmp2.xml";
+            String fileOut = "tmp.xml";
             Thread wget = new Thread(new Wget(url, speed, fileOut));
             wget.start();
             wget.join();
