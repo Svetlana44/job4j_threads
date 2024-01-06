@@ -14,11 +14,13 @@ public class ShowRoomLock {
     /* Монитор - это объект ShowRoomLock */
     public void lockOfInstance() {
         synchronized (this) {
+            System.out.println("Any text");
         }
     } /* Монитор будет сам класс ShowRoomLock */
 
     public static void lockOfClass() {
         synchronized (ShowRoomLock.class) {
+            System.out.println("Any text");
         }
     }
 }
