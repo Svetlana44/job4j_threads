@@ -70,12 +70,13 @@ public class Wget implements Runnable {
                 var downloadAt = System.nanoTime();
                 output.write(dataBuffer, 0, bytesRead);
                 sumReadedBytes += bytesRead;
-                System.out.println("Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");
-                if (sumReadedBytes >= speed) {
-                    long speedBytes = System.nanoTime() - downloadAt;
-                    if (speedBytes < 1000000) {
-                        Thread.currentThread().sleep((1000000 - speedBytes) / 1000000);
-                    }
+         /*       System.out.println("Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");   */
+
+                long speedTime = System.currentTimeMillis() - downloadAt / 1000000;
+                long speedBytes = bytesRead / speedTime;
+                if (speedBytes < speed) {
+                    Thread.currentThread().sleep(speed - speedBytes);
+                    System.out.println("-----------------\n Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");
                 }
             }
         } catch (IOException | InterruptedException e) {
