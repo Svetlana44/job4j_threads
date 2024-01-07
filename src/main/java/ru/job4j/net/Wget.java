@@ -65,25 +65,28 @@ public class Wget implements Runnable {
  /*  старт отсекаем время с помощью currentTimMillis и до цикла. Также до цикла добавляем переменную,
   в которую будем накапливать количество скачанных байт - как только она достигла speed - ставим на паузу если это необходимо    */
             int sumReadedBytes = 0;
-
+            long startTimeMillis = System.currentTimeMillis();
             while ((bytesRead = input.read(dataBuffer, 0, dataBuffer.length)) != -1) {
-                var downloadAt = System.nanoTime();
+
+                /*      var downloadAt = System.nanoTime(); */
                 output.write(dataBuffer, 0, bytesRead);
                 sumReadedBytes += bytesRead;
-         /*       System.out.println("Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");   */
-
-                long speedTime = System.currentTimeMillis() - downloadAt / 1000000;
-                long speedBytes = bytesRead / speedTime;
-                if (speedBytes < speed) {
-                    Thread.currentThread().sleep(speed - speedBytes);
-                    System.out.println("-----------------\n Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");
+                /*       System.out.println("Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");   */
+                if (System.currentTimeMillis() - startTimeMillis < bytesRead / speed) {
+                    if (System.currentTimeMillis() - startTimeMillis == 0) {
+                        Thread.sleep(1000);
+                    } else {
+                        Thread.sleep(((bytesRead / speed) - (bytesRead / System.currentTimeMillis()) - startTimeMillis));
+                    }
                 }
+                System.out.println("-----------------\n Read " + bytesRead + " bytes : " + (System.currentTimeMillis() - startTimeMillis) + " ms.");
+                startTimeMillis = System.currentTimeMillis();
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         try {
-            System.out.println(Files.size(file.toPath()) + " bytes");
+            System.out.println("file size " + Files.size(file.toPath()) + " bytes");
         } catch (IOException e) {
             e.printStackTrace();
         }
