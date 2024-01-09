@@ -72,15 +72,14 @@ public class Wget implements Runnable {
                 sumReadedBytes += bytesRead;
                 /*       System.out.println("Read 512 bytes : " + (System.nanoTime() - downloadAt) + " nano.");   */
                 if (sumReadedBytes >= speed) {
-                    if (System.currentTimeMillis() - startTimeMillis < 1000) {
-                        Thread.currentThread().sleep(1000 - (System.currentTimeMillis() - startTimeMillis));
+                    long dif = System.currentTimeMillis() - startTimeMillis;
+                    if (dif < 1000) {
+                        Thread.currentThread().sleep(1000 - (dif));
                         System.out.println("-----------------\n Read " + sumReadedBytes + " bytes : " + (System.currentTimeMillis() - startTimeMillis) + " ms.");
-                        sumReadedBytes = 0;
-                        continue;
                     }
+                    sumReadedBytes = 0;
+                    startTimeMillis = System.currentTimeMillis();
                 }
-       /*         System.out.println("-----------------\n Read " + sumReadedBytes + " bytes : " + (System.currentTimeMillis() - startTimeMillis) + " ms."); */
-                startTimeMillis = System.currentTimeMillis();
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
