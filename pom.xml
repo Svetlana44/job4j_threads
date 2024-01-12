@@ -35,7 +35,13 @@
             <version>3.24.2</version>
             <scope>test</scope>
         </dependency>
-
+        <!--инструмент, который позволяет понять, где у нас общие ресурсы, и как мы их синхронизируем для потоков
+        В этой библиотеке есть аннотации, которыми мы описываем класс.-->
+        <dependency>
+            <groupId>net.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
+            <version>1.0</version>
+        </dependency>
         <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
         <dependency>
             <groupId>org.mockito</groupId>
