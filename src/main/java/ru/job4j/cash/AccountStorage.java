@@ -15,11 +15,11 @@ public class AccountStorage {
     private final HashMap<Integer, Account> accounts = new HashMap<>();
 
     public synchronized boolean add(Account account) {
-        return accounts.put(account.id(), account) == account;
+        return accounts.putIfAbsent(account.id(), account) == null;
     }
 
     public synchronized boolean update(Account account) {
-        return accounts.put(account.id(), account) == account;
+        return accounts.put(account.id(), account) != null;
     }
 
     public synchronized void delete(int id) {
@@ -27,16 +27,29 @@ public class AccountStorage {
     }
 
     public synchronized Optional<Account> getById(int id) {
-        if (!accounts.containsKey(id)) {
-            throw new IllegalStateException("Not found account by id = " + id);
-        }
         return Optional.ofNullable(accounts.get(id));
     }
 
+    /*необходимо найти 2 аккаунта, проверить что это не пустые Optional,
+     проверить баланс аккаунта донора
+     и только после этого переназначить балансы аккаунтов*/
     public synchronized void transfer(int fromId, int toId, int amount) {
-        int amountFrom = this.getById(fromId).get().amount() - amount;
-        int amountTo = this.getById(toId).get().amount() + amount;
-        accounts.put(fromId, new Account(fromId, amountFrom));
-        accounts.put(toId, new Account(toId, amountTo));
-    }
+        if (!(this.getById(fromId).isEmpty() || this.getById(toId).isEmpty())) {
+            if (this.getById(fromId).get().amount() < amount) {
+                throw new IllegalStateException("The account has insufficient funds.");
+            }
+
+            int amountFrom = this.getById(fromId).get().amount() - amount;
+            int amountTo = this.getById(toId).get().amount() + amount;
+            accounts.put(fromId, new Account(fromId, amountFrom));
+            accounts.put(toId, new Account(toId, amountTo));
+            return;
+        }
+        if (this.getById(fromId).isEmpty()) {
+            throw new IllegalStateException("Not found account by id = " + fromId);
+        }
+        if (this.getById(toId).isEmpty()) {
+            throw new IllegalStateException("Not found account by id = " + toId);
+        }
+     }
 }
