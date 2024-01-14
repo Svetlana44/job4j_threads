@@ -37,7 +37,7 @@ public class FileContent {
                 return character > 0;
             }
         };*/
-        return getContent(character -> character > 0);
+        return getContent(character -> true);
     }
 
     /*   public String getContentWithoutUnicode() throws IOException {
