@@ -4,10 +4,14 @@ import org.apache.poi.ss.formula.functions.T;
 
 public class QueueApp {
     public static void main(String[] args) throws InterruptedException {
-        SimpleBlockingQueue simpleBlockingQueue = new SimpleBlockingQueue();
+        SimpleBlockingQueue simpleBlockingQueue = new SimpleBlockingQueue(3);
         Thread first = new Thread(
                 () -> {
-                    simpleBlockingQueue.offer(new T());
+                    try {
+                        simpleBlockingQueue.offer(new T());
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                 }, "First");
         Thread second = new Thread(
                 () -> {

@@ -3,7 +3,8 @@ package ru.job4j.io.queue;
 import net.jcip.annotations.GuardedBy;
 import net.jcip.annotations.ThreadSafe;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /*  шаблон Producer Consumer
 собственная версия bounded blocking queue. Это блокирующая очередь, ограниченная по размеру.
@@ -19,42 +20,53 @@ new SimpleBlockingQueue<Integer>()
 Этот объект будет общим ресурсом между этими нитями.
 Важный момент, когда нить переводить в состояние ожидания, то она отпускает монитор и другая нить тоже может выполнить этот метод. */
 @ThreadSafe
-public class SimpleBlockingQueue<T> implements Iterable<T> {
+public class SimpleBlockingQueue<T> {
     @GuardedBy("this")
     private Queue<T> queue = new LinkedList<>();
+    @GuardedBy("this")
+    private final int boundOver;
 
-    public void offer(T value) {
+    @GuardedBy("this")
+    private T t;
+
+    public synchronized T getT() {
+        return t;
+    }
+
+    public SimpleBlockingQueue(int boundOver) {
+        this.boundOver = boundOver;
+    }
+
+    public void offer(T value) throws InterruptedException {
         synchronized (this) {
+            while (queue.size() >= boundOver) {
+                this.wait();
+            }
             queue.add(value);
             this.notifyAll();
         }
     }
 
     /* Метод poll() должен вернуть объект из внутренней коллекции.
-     Если в коллекции объектов нет, то нужно перевести текущую нить в состояние ожидания.  */
+     Если в коллекции объектов нет, то нужно перевести текущую нить в состояние ожидания.
+     необходимо извлечь, потом оповестить нити и потом вернуть результат  */
     public T poll() throws InterruptedException {
         synchronized (this) {
             while (queue.isEmpty()) {
                 this.wait();
             }
-            return queue.poll();
+            T t = queue.poll();
+            this.notifyAll();
+            this.t = t;
+            return t;
         }
     }
-
 
     public synchronized Queue<T> getQueue() {
         return queue;
     }
 
-    @Override
-    public synchronized Iterator<T> iterator() {
-        return copy((List<T>) queue).iterator();
+    public synchronized boolean queueIsEmpty() {
+        return queue.isEmpty();
     }
-
-    private synchronized List<T> copy(List<T> origin) {
-        return new ArrayList<>(origin);
-
-    }
-
-
 }
