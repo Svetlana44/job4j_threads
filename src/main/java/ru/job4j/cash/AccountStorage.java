@@ -34,25 +34,22 @@ public class AccountStorage {
      проверить баланс аккаунта донора
      и только после этого переназначить балансы аккаунтов*/
     public synchronized void transfer(int fromId, int toId, int amount) {
+
         Optional<Account> fromAcc = this.getById(fromId);
         Optional<Account> toAcc = this.getById(toId);
 
-        if (!(fromAcc.isEmpty() || toAcc.isEmpty())) {
-            if (fromAcc.get().amount() < amount) {
-                throw new IllegalStateException("The account has insufficient funds.");
-            }
-
-            int amountFrom = fromAcc.get().amount() - amount;
-            int amountTo = toAcc.get().amount() + amount;
-            accounts.put(fromId, new Account(fromId, amountFrom));
-            accounts.put(toId, new Account(toId, amountTo));
-            return;
-        }
         if (fromAcc.isEmpty()) {
             throw new IllegalStateException("Not found account by id = " + fromId);
         }
         if (toAcc.isEmpty()) {
             throw new IllegalStateException("Not found account by id = " + toId);
         }
-     }
+        if (fromAcc.get().amount() < amount) {
+            throw new IllegalStateException("The account has insufficient funds.");
+        }
+        int amountFrom = fromAcc.get().amount() - amount;
+        int amountTo = toAcc.get().amount() + amount;
+        accounts.put(fromId, new Account(fromId, amountFrom));
+        accounts.put(toId, new Account(toId, amountTo));
+    }
 }
