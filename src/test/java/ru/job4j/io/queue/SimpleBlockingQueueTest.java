@@ -55,31 +55,32 @@ class SimpleBlockingQueueTest {
     @Test
     void pollOne() throws InterruptedException {
         SimpleBlockingQueue<Integer> simpleBlockingQueue = new SimpleBlockingQueue<>(3);
-        AtomicInteger countA = new AtomicInteger(1);
+        AtomicInteger countA = new AtomicInteger(0);
+
         Thread producer = new Thread(
                 () -> {
                     try {
-                        simpleBlockingQueue.offer(1);
+                        simpleBlockingQueue.offer(33);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
                 }, "Producer");
-        producer.start();
-        producer.join();
         Thread consumer = new Thread(
-
                 () -> {
                     try {
-                        countA.getAndIncrement();
-                        simpleBlockingQueue.poll();
-                        countA.getAndIncrement();
+                        int integer = simpleBlockingQueue.poll();
+                        countA.addAndGet(integer);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
                 }, "Consumer");
+        producer.start();
+        producer.join();
+
         consumer.start();
         consumer.join();
-        assertThat(simpleBlockingQueue.getT()).isEqualTo(1);
+        assertThat(countA.get()).isEqualTo(33);
+
     }
 
     @Test

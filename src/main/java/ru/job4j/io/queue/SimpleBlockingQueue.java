@@ -26,13 +26,6 @@ public class SimpleBlockingQueue<T> {
     @GuardedBy("this")
     private final int boundOver;
 
-    @GuardedBy("this")
-    private T t;
-
-    public synchronized T getT() {
-        return t;
-    }
-
     public SimpleBlockingQueue(int boundOver) {
         this.boundOver = boundOver;
     }
@@ -57,7 +50,6 @@ public class SimpleBlockingQueue<T> {
             }
             T t = queue.poll();
             this.notifyAll();
-            this.t = t;
             return t;
         }
     }
