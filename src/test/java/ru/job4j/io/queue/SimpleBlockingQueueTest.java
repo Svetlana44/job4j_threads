@@ -4,7 +4,9 @@ import org.apache.poi.ss.formula.functions.T;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -101,5 +103,81 @@ class SimpleBlockingQueueTest {
         consumer.start();
         consumer.interrupt();
         assertThat(countA.get()).isEqualTo(1);
+    }
+
+    @Test
+    public void whenFetchAllThenGetIt() throws InterruptedException {
+        final CopyOnWriteArrayList<Integer> buffer = new CopyOnWriteArrayList<>();
+        final SimpleBlockingQueue<Integer> queue = new SimpleBlockingQueue<>(22);
+
+        Thread producer = new Thread(
+                () -> {
+                    IntStream.range(0, 3).forEach(v -> {
+                        try {
+                            queue.offer(v);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    });
+                }, "Producer");
+        Thread concumer = new Thread(
+                () -> {
+                    while (!queue.queueIsEmpty() || !Thread.currentThread().isInterrupted()) {
+                        try {
+                            buffer.add(queue.poll());
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                }, "Consumer");
+
+        producer.start();
+        concumer.start();
+        /* Сначала дожидаемся завершения работы производителя.*/
+        producer.join();
+        /*  Далее посылаем сигнал, что потребителю можно остановиться.*/
+        concumer.interrupt();
+        /*  Ждем пока потребитель прочитает все данные и завершит свою работу.   */
+        concumer.join();
+
+        assertThat(buffer).containsExactly(0, 1, 2);
+    }
+
+    @Test
+    public void whenFetchAllThenGetItSmallBuff() throws InterruptedException {
+        final CopyOnWriteArrayList<Integer> buffer = new CopyOnWriteArrayList<>();
+        final SimpleBlockingQueue<Integer> queue = new SimpleBlockingQueue<>(2);
+
+        Thread producer = new Thread(
+                () -> {
+                    IntStream.range(0, 7).forEach(v -> {
+                        try {
+                            queue.offer(v);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    });
+                }, "Producer");
+        Thread concumer = new Thread(
+                () -> {
+                    while (!queue.queueIsEmpty() || !Thread.currentThread().isInterrupted()) {
+                        try {
+                            buffer.add(queue.poll());
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                }, "Consumer");
+
+        producer.start();
+        concumer.start();
+        /* Сначала дожидаемся завершения работы производителя.*/
+        producer.join();
+        /*  Далее посылаем сигнал, что потребителю можно остановиться.*/
+        concumer.interrupt();
+        /*  Ждем пока потребитель прочитает все данные и завершит свою работу.   */
+        concumer.join();
+
+        assertThat(buffer).containsExactly(0, 1, 2, 3, 4, 5, 6);
     }
 }
